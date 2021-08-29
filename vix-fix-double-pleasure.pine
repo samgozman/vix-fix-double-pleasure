@@ -10,37 +10,19 @@ study(title="VIX Fix: Double Pleasure", overlay=false)
 
 // ++++++++++ INPUTS ++++++++++ //
 VIXFix_length = input(22, title="VIX Fix Length")
-VIXFix_arraySize = input(22, title="The number of periods among which to look for lows and highs")
+VIXFix_back = input(22, title="The number of periods among which to look for lows and highs")
 plotMarks = input(title="Plot high/low marks", type=input.bool, defval=true)
 
-
 // ++++++++++ LOGIC ++++++++++ //
-// Vix arrays
-var VIXdown = array.new_float(size=VIXFix_arraySize)
-var VIXup = array.new_float(size=VIXFix_arraySize)
-
 // Vix current
 VIXFix_classic = (highest(close, VIXFix_length) - low) / highest(close, VIXFix_length) * -100
 VIXFix_reverse = (lowest(close, VIXFix_length) - high) / lowest(close, VIXFix_length) * -100
 
-// Array push
-array.push(VIXdown, VIXFix_classic)
-array.push(VIXup, VIXFix_reverse)
-
-// Last elemsnts of VIX array
-VIXup_sliced = VIXup
-array.reverse(VIXup_sliced)
-VIXup_sliced := array.slice(VIXup_sliced, 0, VIXFix_arraySize)
-
-VIXdown_sliced = VIXdown
-array.reverse(VIXdown_sliced)
-VIXdown_sliced := array.slice(VIXdown_sliced, 0, VIXFix_arraySize)
-
 // Minimaxis
-isMaxUp = array.max(VIXup_sliced) == VIXFix_reverse // Top peaks
-isMaxDown = array.min(VIXdown_sliced) == VIXFix_classic // Top bottoms
-isMinUp = array.min(VIXup_sliced) == VIXFix_reverse // Min peaks
-isMinDown = array.max(VIXdown_sliced) == VIXFix_classic // Min bottoms
+isMaxUp = highest(VIXFix_reverse, VIXFix_back) == VIXFix_reverse // Top peaks
+isMaxDown = lowest(VIXFix_classic, VIXFix_back) == VIXFix_classic // Top bottoms
+isMinUp = lowest(VIXFix_reverse, VIXFix_back) == VIXFix_reverse // Min peaks
+isMinDown = highest(VIXFix_classic, VIXFix_back) == VIXFix_classic // Min bottoms
 
 // ++++++++++ PLOT ++++++++++ //
 plot(series=VIXFix_reverse, style=plot.style_histogram, linewidth=4, color=color.new(color.teal, 20))
