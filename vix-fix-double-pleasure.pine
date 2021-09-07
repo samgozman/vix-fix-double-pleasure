@@ -6,23 +6,52 @@
 // 
 // ++++++++++ Warning: The script is provided for educational purposes only. ++++++++++ //
 
-study(title="VIX Fix: Double Pleasure", overlay=false)
+study(title="VIX Fix: Double Pleasure + ADX filter", shorttitle="VIX Fix: Double Pleasure", overlay=false)
 
 // ++++++++++ INPUTS ++++++++++ //
 VIXFix_length = input(22, title="VIX Fix Length")
 VIXFix_back = input(22, title="The number of periods among which to look for lows and highs")
 plotMarks = input(title="Plot high/low marks", type=input.bool, defval=true)
 
+useFilter = input(false, title="Use ADX filter?", group="Filter signals by ADX")
+adxMinVal = input(20, title="🛠 Do not show signals if ADX is below", group="Filter signals by ADX", minval=0, maxval=100)
+adxlen = input(14, title="ADX Smoothing (optional)", group="Filter signals by ADX")
+dilen = input(14, title="DI Length (optional)", group="Filter signals by ADX")
+
 // ++++++++++ LOGIC ++++++++++ //
 // Vix current
 VIXFix_classic = (highest(close, VIXFix_length) - low) / highest(close, VIXFix_length) * -100
 VIXFix_reverse = (lowest(close, VIXFix_length) - high) / lowest(close, VIXFix_length) * -100
+
+// ADX Filter
+dirmov(len) =>
+	up = change(high)
+	down = -change(low)
+	plusDM = na(up) ? na : (up > down and up > 0 ? up : 0)
+	minusDM = na(down) ? na : (down > up and down > 0 ? down : 0)
+	truerange = rma(tr, len)
+	plus = fixnan(100 * rma(plusDM, len) / truerange)
+	minus = fixnan(100 * rma(minusDM, len) / truerange)
+	[plus, minus]
+adx(dilen, adxlen) =>
+	[plus, minus] = dirmov(dilen)
+	sum = plus + minus
+	adx = 100 * rma(abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+sig = adx(dilen, adxlen)
 
 // Minimaxis
 isMaxUp = highest(VIXFix_reverse, VIXFix_back) == VIXFix_reverse // Top peaks
 isMaxDown = lowest(VIXFix_classic, VIXFix_back) == VIXFix_classic // Top bottoms
 isMinUp = lowest(VIXFix_reverse, VIXFix_back) == VIXFix_reverse // Min peaks
 isMinDown = highest(VIXFix_classic, VIXFix_back) == VIXFix_classic // Min bottoms
+
+// Signals
+buySignal = isMaxDown or isMinUp
+sellSignal = isMinDown or isMaxUp
+
+// Filtred signals
+buySignalFiltred = buySignal and sig > adxMinVal
+sellSignalFiltred = sellSignal and sig > adxMinVal
 
 // ++++++++++ PLOT ++++++++++ //
 plot(series=VIXFix_reverse, style=plot.style_histogram, linewidth=4, color=color.new(color.teal, 20))
@@ -32,8 +61,5 @@ plot(series=VIXFix_classic, style=plot.style_histogram, linewidth=4, color=color
 plot(series=VIXFix_classic, style=plot.style_line, linewidth=4, color=color.new(color.red, 20), title="VIX fix classic")
 
 // ++++++++++ PLOT - Marks ++++++++++ //
-plotshape((isMinDown or isMaxUp) and plotMarks, title="Sell", color = color.red, style=shape.circle, location=location.top, size=size.tiny)
-plotshape((isMaxDown or isMinUp) and plotMarks, title="Buy", color = color.green, style=shape.circle, location=location.bottom, size=size.tiny)
-
-// ================== TODO ================== //
-// Plot Stoch-like lines based on VIX
+plotshape((useFilter ? sellSignalFiltred : sellSignal) and plotMarks, title="Sell", color = color.red, style=shape.circle, location=location.top, size=size.tiny)
+plotshape((useFilter ? buySignalFiltred : buySignal) and plotMarks, title="Buy", color = color.green, style=shape.circle, location=location.bottom, size=size.tiny)
