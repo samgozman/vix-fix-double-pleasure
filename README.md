@@ -1,5 +1,7 @@
 # VIX Fix Double Pleasure - TradingView PineScript
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1DI4VL)
+
 [Link to the script on TradingView](https://ru.tradingview.com/script/9zutsrOa-vix-fix-double-pleasure/)
 
 The idea of an oscillator is quite simple. It is based on the popular VIX Fix oscillator, the purpose of which is to find local bottoms within the scope of trend movement. But in addition to the classic VIX fix, I built an oscillator opposite to it, which serves as a potential signal of the end of local growth.
